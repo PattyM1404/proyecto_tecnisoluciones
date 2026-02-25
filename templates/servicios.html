@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Gestión de Servicios Tecnológicos</h2>
+
+<h3>Agregar Servicio</h3>
+<form action="/agregar_servicio" method="POST">
+    <input type="text" name="nombre" placeholder="Nombre del servicio" required>
+    <input type="text" name="descripcion" placeholder="Descripción" required>
+    <input type="number" step="0.01" name="precio" placeholder="Precio" required>
+    <input type="text" name="duracion" placeholder="Duración estimada" required>
+    <button type="submit">Agregar</button>
+</form>
+
+<hr>
+
+<h3>Buscar Servicio</h3>
+<form action="/buscar_servicio" method="POST">
+    <input type="text" name="buscar" placeholder="Nombre del servicio">
+    <button type="submit">Buscar</button>
+</form>
+
+<hr>
+
+<h3>Lista de Servicios</h3>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Nombre</th>
+    <th>Descripción</th>
+    <th>Precio</th>
+    <th>Duración</th>
+    <th>Acciones</th>
+</tr>
+
+{% for s in servicios %}
+<tr>
+    <td>{{ s.id }}</td>
+    <td>{{ s.nombre }}</td>
+    <td>{{ s.descripcion }}</td>
+    <td>{{ s.precio }}</td>
+    <td>{{ s.duracion }}</td>
+    <td>
+        <a href="/editar_servicio/{{ s.id }}">Editar</a> |
+        <a href="/eliminar_servicio/{{ s.id }}">Eliminar</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}
