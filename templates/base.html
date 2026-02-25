@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TecniSoluciones EC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <header>
+        <h1>TecniSoluciones EC</h1>
+        <nav>
+            <a href="/">Inicio</a> |
+            <a href="/about">Acerca de</a> |
+            <a href="/clientes">Clientes</a>
+        </nav>
+    </header>
+
+    <hr>
+
+    {% block content %}
+    {% endblock %}
+
+    <hr>
+
+    <footer>
+        <p>© 2026 TecniSoluciones EC - Sistema de Ventas</p>
+    </footer>
+
+</body>
+</html>

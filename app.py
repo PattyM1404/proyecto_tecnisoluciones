@@ -1,11 +1,19 @@
-from flask import Flask
+from flask import Flask, render_template
 import os
 
 app = Flask(__name__)
 
 @app.route('/')
 def inicio():
-    return "Bienvenido al Sistema de Ventas – TecniSoluciones EC"
+    return render_template('index.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/clientes')
+def clientes():
+    return render_template('clientes.html')
 
 @app.route('/cliente/<nombre>')
 def cliente(nombre):
