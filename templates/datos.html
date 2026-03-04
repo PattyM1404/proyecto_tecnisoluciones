@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Datos almacenados en TXT</h2>
+<ul>
+    {% for linea in datos_txt %}
+        <li>{{ linea }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Datos almacenados en JSON</h2>
+<ul>
+    {% for item in datos_json %}
+        <li>{{ item.nombre }} - {{ item.descripcion }} - {{ item.precio }} - {{ item.duracion }}</li>
+    {% endfor %}
+</ul>
+
+<h2>Datos almacenados en CSV</h2>
+<ul>
+    {% for fila in datos_csv %}
+        <li>{{ fila }}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
