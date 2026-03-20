@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Usuarios</h2>
+
+<form action="/agregar_usuario" method="POST">
+    <input type="text" name="nombre" placeholder="Nombre" required><br><br>
+    <input type="email" name="email" placeholder="Correo" required><br><br>
+    <input type="password" name="password" placeholder="Contraseña" required><br><br>
+    <button type="submit">Guardar</button>
+</form>
+
+<hr>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Email</th>
+<th>Acciones</th>
+</tr>
+
+{% for u in usuarios %}
+<tr>
+<td>{{ u[0] }}</td>
+<td>{{ u[1] }}</td>
+<td>{{ u[2] }}</td>
+<td>
+<a href="/eliminar_usuario/{{ u[0] }}">Eliminar</a>
+</td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}

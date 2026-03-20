@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editar Usuario</title>
+</head>
+<body>
+
+<h2>Editar Usuario</h2>
+
+<form action="/actualizar_usuario/{{ usuario[0] }}" method="POST">
+    
+    <label>Nombre:</label><br>
+    <input type="text" name="nombre" value="{{ usuario[1] }}" required><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" name="mail" value="{{ usuario[2] }}" required><br><br>
+
+    <label>Nueva Contraseña:</label><br>
+    <input type="password" name="password" placeholder="Ingrese nueva contraseña" required><br><br>
+
+    <button type="submit">Actualizar</button>
+</form>
+
+<br>
+<a href="/usuarios">Volver</a>
+
+</body>
+</html>

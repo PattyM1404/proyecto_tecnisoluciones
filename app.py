@@ -1,217 +1,227 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-import os
-import json
-import csv
+from flask import Flask, render_template, request, redirect
+from conexion.conexion import conectar
+from models import Usuario
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 app = Flask(__name__)
+app.secret_key = "secreto"
 
-# =========================
-# CONFIGURACIÓN BASE DE DATOS (ORM)
-# =========================
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'tecnisoluciones.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ==========================
+# CARGAR USUARIO
+# ==========================
+@login_manager.user_loader
+def load_user(user_id):
+    conexion = conectar()
+    cursor = conexion.cursor()
 
-db = SQLAlchemy(app)
+    cursor.execute("SELECT * FROM usuarios WHERE id_usuario=%s", (user_id,))
+    user = cursor.fetchone()
 
-# =========================
-# MODELO SERVICIO (ORM)
-# =========================
+    cursor.close()
+    conexion.close()
 
-class Servicio(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.String(200), nullable=False)
-    precio = db.Column(db.Float, nullable=False)
-    duracion = db.Column(db.String(50), nullable=False)
+    if user:
+        return Usuario(user[0], user[1], user[2], user[3])
+    return None
 
-    def __repr__(self):
-        return f'<Servicio {self.nombre}>'
-
-# Crear base de datos automáticamente
-with app.app_context():
-    db.create_all()
-
-# =========================
-# CONFIGURACIÓN CARPETA DATA
-# =========================
-
-DATA_FOLDER = os.path.join(basedir, "data")
-
-if not os.path.exists(DATA_FOLDER):
-    os.makedirs(DATA_FOLDER)
-
-# =========================
-# FUNCIONES DE PERSISTENCIA
-# =========================
-
-def guardar_txt(servicio):
-    ruta = os.path.join(DATA_FOLDER, "datos.txt")
-    with open(ruta, "a", encoding="utf-8") as f:
-        f.write(f"{servicio.nombre} | {servicio.descripcion} | {servicio.precio} | {servicio.duracion}\n")
-
-
-def guardar_json(servicio):
-    ruta = os.path.join(DATA_FOLDER, "datos.json")
-
-    datos = []
-
-    if os.path.exists(ruta):
-        with open(ruta, "r", encoding="utf-8") as f:
-            try:
-                datos = json.load(f)
-            except:
-                datos = []
-
-    nuevo = {
-        "nombre": servicio.nombre,
-        "descripcion": servicio.descripcion,
-        "precio": servicio.precio,
-        "duracion": servicio.duracion
-    }
-
-    datos.append(nuevo)
-
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(datos, f, indent=4)
-
-
-def guardar_csv(servicio):
-    ruta = os.path.join(DATA_FOLDER, "datos.csv")
-    archivo_existe = os.path.exists(ruta)
-
-    with open(ruta, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-
-        if not archivo_existe:
-            writer.writerow(["nombre", "descripcion", "precio", "duracion"])
-
-        writer.writerow([servicio.nombre, servicio.descripcion, servicio.precio, servicio.duracion])
-
-
-# =========================
-# RUTAS PRINCIPALES
-# =========================
-
+# ==========================
+# INICIO
+# ==========================
 @app.route('/')
 def inicio():
-    return render_template('index.html')
+    return redirect('/login')
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
+# ==========================
+# LOGIN
+# ==========================
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
 
+        conexion = conectar()
+        cursor = conexion.cursor()
+
+        cursor.execute("SELECT * FROM usuarios WHERE mail=%s", (email,))
+        user = cursor.fetchone()
+
+        cursor.close()
+        conexion.close()
+
+        if user and check_password_hash(user[3], password):
+            usuario = Usuario(user[0], user[1], user[2], user[3])
+            login_user(usuario)
+            return redirect('/panel')
+
+        return "Credenciales incorrectas"
+
+    return render_template('login.html')
+
+# ==========================
+# REGISTRO
+# ==========================
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        email = request.form['email']
+        password = generate_password_hash(request.form['password'])
+
+        conexion = conectar()
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            "INSERT INTO usuarios (nombre, mail, password) VALUES (%s,%s,%s)",
+            (nombre, email, password)
+        )
+
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+
+        return redirect('/login')
+
+    return render_template('registro.html')
+
+# ==========================
+# PANEL
+# ==========================
+@app.route('/panel')
+@login_required
+def panel():
+    return render_template('panel.html')
+
+# ==========================
+# LOGOUT
+# ==========================
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('/login')
+
+# ==========================
+# USUARIOS
+# ==========================
+@app.route('/usuarios')
+@login_required
+def usuarios():
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("SELECT * FROM usuarios")
+    datos = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return render_template('usuarios.html', usuarios=datos)
+
+@app.route('/agregar_usuario', methods=['POST'])
+@login_required
+def agregar_usuario():
+    nombre = request.form['nombre']
+    email = request.form['email']
+    password = generate_password_hash(request.form['password'])
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        "INSERT INTO usuarios (nombre, mail, password) VALUES (%s,%s,%s)",
+        (nombre, email, password)
+    )
+
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+
+    return redirect('/usuarios')
+
+@app.route('/eliminar_usuario/<int:id>')
+@login_required
+def eliminar_usuario(id):
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("DELETE FROM usuarios WHERE id_usuario=%s", (id,))
+    conexion.commit()
+
+    cursor.close()
+    conexion.close()
+
+    return redirect('/usuarios')
+
+# ==========================
+# SERVICIOS
+# ==========================
+@app.route('/servicios')
+@login_required
+def servicios():
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("SELECT * FROM servicios")
+    datos = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return render_template('servicios.html', servicios=datos)
+
+@app.route('/agregar_servicio', methods=['POST'])
+@login_required
+def agregar_servicio():
+
+    nombre = request.form['nombre']
+    descripcion = request.form['descripcion']
+    precio = request.form['precio']
+    duracion = request.form['duracion']
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        "INSERT INTO servicios (nombre, descripcion, precio, duracion) VALUES (%s,%s,%s,%s)",
+        (nombre, descripcion, precio, duracion)
+    )
+
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+
+    return redirect('/servicios')
+
+@app.route('/eliminar_servicio/<int:id>')
+@login_required
+def eliminar_servicio(id):
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("DELETE FROM servicios WHERE id=%s", (id,))
+    conexion.commit()
+
+    cursor.close()
+    conexion.close()
+
+    return redirect('/servicios')
+
+# ==========================
+# CLIENTES (SIMPLE)
+# ==========================
 @app.route('/clientes')
+@login_required
 def clientes():
     return render_template('clientes.html')
 
-# =========================
-# CRUD SERVICIOS (ORM)
-# =========================
-
-@app.route('/servicios')
-def ver_servicios():
-    servicios = Servicio.query.all()
-    return render_template('servicios.html', servicios=servicios)
-
-
-@app.route('/agregar_servicio', methods=['POST'])
-def agregar_servicio():
-    nuevo = Servicio(
-        nombre=request.form['nombre'],
-        descripcion=request.form['descripcion'],
-        precio=float(request.form['precio']),
-        duracion=request.form['duracion']
-    )
-
-    db.session.add(nuevo)
-    db.session.commit()
-
-    # Guardar también en archivos
-    guardar_txt(nuevo)
-    guardar_json(nuevo)
-    guardar_csv(nuevo)
-
-    return redirect(url_for('ver_servicios'))
-
-
-@app.route('/eliminar_servicio/<int:id>')
-def eliminar_servicio(id):
-    servicio = Servicio.query.get_or_404(id)
-    db.session.delete(servicio)
-    db.session.commit()
-    return redirect(url_for('ver_servicios'))
-
-
-@app.route('/editar_servicio/<int:id>')
-def editar_servicio(id):
-    servicio = Servicio.query.get_or_404(id)
-    return render_template('editar_servicio.html', servicio=servicio)
-
-
-@app.route('/actualizar_servicio/<int:id>', methods=['POST'])
-def actualizar_servicio(id):
-    servicio = Servicio.query.get_or_404(id)
-
-    servicio.nombre = request.form['nombre']
-    servicio.descripcion = request.form['descripcion']
-    servicio.precio = float(request.form['precio'])
-    servicio.duracion = request.form['duracion']
-
-    db.session.commit()
-    return redirect(url_for('ver_servicios'))
-
-
-@app.route('/buscar_servicio', methods=['POST'])
-def buscar_servicio():
-    nombre = request.form['buscar']
-    resultados = Servicio.query.filter(Servicio.nombre.like(f"%{nombre}%")).all()
-    return render_template('servicios.html', servicios=resultados)
-
-
-# =========================
-# RUTA PARA VER DATOS EN ARCHIVOS
-# =========================
-
-@app.route('/datos')
-def ver_datos():
-
-    # Leer TXT
-    ruta_txt = os.path.join(DATA_FOLDER, "datos.txt")
-    datos_txt = []
-    if os.path.exists(ruta_txt):
-        with open(ruta_txt, "r", encoding="utf-8") as f:
-            datos_txt = f.readlines()
-
-    # Leer JSON
-    ruta_json = os.path.join(DATA_FOLDER, "datos.json")
-    datos_json = []
-    if os.path.exists(ruta_json):
-        with open(ruta_json, "r", encoding="utf-8") as f:
-            try:
-                datos_json = json.load(f)
-            except:
-                datos_json = []
-
-    # Leer CSV
-    ruta_csv = os.path.join(DATA_FOLDER, "datos.csv")
-    datos_csv = []
-    if os.path.exists(ruta_csv):
-        with open(ruta_csv, "r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            datos_csv = list(reader)
-
-    return render_template("datos.html",
-                           datos_txt=datos_txt,
-                           datos_json=datos_json,
-                           datos_csv=datos_csv)
-
-
-# =========================
-# EJECUCIÓN
-# =========================
-
-if __name__ == "__main__":
+# ==========================
+# RUN
+# ==========================
+if __name__ == '__main__':
     app.run(debug=True)

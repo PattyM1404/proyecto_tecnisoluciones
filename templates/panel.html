@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Bienvenido {{ current_user.nombre }}</h2>
+
+<a href="/usuarios">Gestionar Usuarios</a><br>
+<a href="/servicios">Gestionar Servicios</a><br>
+<a href="/logout">Cerrar sesión</a>
+
+{% endblock %}
