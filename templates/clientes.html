@@ -2,6 +2,38 @@
 {% block content %}
 
 <h2>Clientes</h2>
-<p>Página de clientes funcionando.</p>
+
+<form action="/agregar_cliente" method="POST">
+    <input type="text" name="nombre" placeholder="Nombre" required><br><br>
+    <input type="email" name="email" placeholder="Correo" required><br><br>
+    <input type="text" name="telefono" placeholder="Teléfono" required><br><br>
+    <button type="submit">Guardar</button>
+</form>
+
+<hr>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Email</th>
+<th>Teléfono</th>
+<th>Acciones</th>
+</tr>
+
+{% for c in clientes %}
+<tr>
+<td>{{ c[0] }}</td>
+<td>{{ c[1] }}</td>
+<td>{{ c[2] }}</td>
+<td>{{ c[3] }}</td>
+<td>
+    <a href="/editar_cliente/{{ c[0] }}">Editar</a> |
+    <a href="/eliminar_cliente/{{ c[0] }}">Eliminar</a>
+</td>
+</tr>
+{% endfor %}
+
+</table>
 
 {% endblock %}

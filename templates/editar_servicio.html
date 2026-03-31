@@ -3,12 +3,21 @@
 {% block content %}
 <h2>Editar Servicio</h2>
 
-<form action="/actualizar_servicio/{{ servicio.id }}" method="POST">
-    <input type="text" name="nombre" value="{{ servicio.nombre }}" required>
-    <input type="text" name="descripcion" value="{{ servicio.descripcion }}" required>
-    <input type="number" step="0.01" name="precio" value="{{ servicio.precio }}" required>
-    <input type="text" name="duracion" value="{{ servicio.duracion }}" required>
+<form action="/actualizar_servicio/{{ servicio[0] }}" method="POST">
+
+    <input type="text" name="nombre" value="{{ servicio[1] }}" placeholder="Nombre" required><br><br>
+
+    <input type="text" name="descripcion" value="{{ servicio[2] }}" placeholder="Descripción" required><br><br>
+
+    <input type="number" step="0.01" name="precio" value="{{ servicio[3] }}" placeholder="Precio" required><br><br>
+
+    <input type="text" name="duracion" value="{{ servicio[4] }}" placeholder="Duración" required><br><br>
+
     <button type="submit">Actualizar</button>
+
 </form>
+
+<br>
+<a href="/servicios">Volver</a>
 
 {% endblock %}
