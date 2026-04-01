@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, send_file
 from conexion.conexion import conectar
 from models import Usuario
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required
 from services.servicio_service import obtener_servicios, insertar_servicio, eliminar_servicio
 from services.servicio_service import obtener_servicio_por_id, actualizar_servicio
 from services.pdf_service import generar_pdf_servicios
-from flask import send_file
 
 app = Flask(__name__)
 app.secret_key = "secreto"
@@ -165,15 +164,11 @@ def eliminar_usuario(id):
 # ==========================
 # SERVICIOS
 # ==========================
-# ==========================
-# SERVICIOS (USANDO SERVICES)
-# ==========================
 @app.route('/servicios')
 @login_required
 def servicios():
     datos = obtener_servicios()
     return render_template('servicios.html', servicios=datos)
-
 
 @app.route('/agregar_servicio', methods=['POST'])
 @login_required
@@ -187,18 +182,17 @@ def agregar_servicio():
 
     return redirect('/servicios')
 
-
 @app.route('/eliminar_servicio/<int:id>')
 @login_required
 def eliminar_servicio_route(id):
     eliminar_servicio(id)
     return redirect('/servicios')
+
 @app.route('/editar_servicio/<int:id>')
 @login_required
 def editar_servicio(id):
     servicio = obtener_servicio_por_id(id)
     return render_template('editar_servicio.html', servicio=servicio)
-
 
 @app.route('/actualizar_servicio/<int:id>', methods=['POST'])
 @login_required
@@ -213,25 +207,27 @@ def actualizar_servicio_route(id):
     return redirect('/servicios')
 
 # ==========================
-# CLIENTES (SIMPLE)
-# ==========================
-# ==========================
-# CLIENTES (CRUD COMPLETO)
+# CLIENTES (CRUD + BUSCADOR)
 # ==========================
 @app.route('/clientes')
 @login_required
 def clientes():
+    buscar = request.args.get('buscar')
+
     conexion = conectar()
     cursor = conexion.cursor()
 
-    cursor.execute("SELECT * FROM clientes")
+    if buscar:
+        cursor.execute("SELECT * FROM clientes WHERE nombre LIKE %s", ('%' + buscar + '%',))
+    else:
+        cursor.execute("SELECT * FROM clientes")
+
     datos = cursor.fetchall()
 
     cursor.close()
     conexion.close()
 
     return render_template('clientes.html', clientes=datos)
-
 
 @app.route('/agregar_cliente', methods=['POST'])
 @login_required
@@ -254,7 +250,6 @@ def agregar_cliente():
 
     return redirect('/clientes')
 
-
 @app.route('/eliminar_cliente/<int:id>')
 @login_required
 def eliminar_cliente(id):
@@ -268,6 +263,7 @@ def eliminar_cliente(id):
     conexion.close()
 
     return redirect('/clientes')
+
 @app.route('/editar_cliente/<int:id>')
 @login_required
 def editar_cliente(id):
@@ -281,7 +277,6 @@ def editar_cliente(id):
     conexion.close()
 
     return render_template('editar_cliente.html', cliente=cliente)
-
 
 @app.route('/actualizar_cliente/<int:id>', methods=['POST'])
 @login_required
@@ -306,17 +301,13 @@ def actualizar_cliente(id):
     return redirect('/clientes')
 
 # ==========================
-# reporte de servicios
+# PDF
 # ==========================
-
 @app.route('/reporte_servicios')
 @login_required
 def reporte_servicios():
-
     datos = obtener_servicios()
-
     generar_pdf_servicios(datos)
-
     return send_file("reporte_servicios.pdf", as_attachment=True)
 
 # ==========================

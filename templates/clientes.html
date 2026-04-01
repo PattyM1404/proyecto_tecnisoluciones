@@ -1,18 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
 
+<div class="container mt-4">
+
 <h2>Clientes</h2>
 
+<!-- BUSCADOR -->
+<form method="GET" action="/clientes" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="buscar" class="form-control" placeholder="Buscar cliente..." value="{{ request.args.get('buscar','') }}">
+        <button class="btn btn-primary" type="submit">🔍</button>
+    </div>
+</form>
+
+<!-- FORMULARIO -->
 <form action="/agregar_cliente" method="POST">
-    <input type="text" name="nombre" placeholder="Nombre" required><br><br>
-    <input type="email" name="email" placeholder="Correo" required><br><br>
-    <input type="text" name="telefono" placeholder="Teléfono" required><br><br>
-    <button type="submit">Guardar</button>
+    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required>
+    <input type="email" name="email" class="form-control mb-2" placeholder="Correo" required>
+    <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" required>
+    <button class="btn btn-success">Guardar</button>
 </form>
 
 <hr>
 
-<table border="1">
+<table class="table table-bordered">
 <tr>
 <th>ID</th>
 <th>Nombre</th>
@@ -28,12 +39,14 @@
 <td>{{ c[2] }}</td>
 <td>{{ c[3] }}</td>
 <td>
-    <a href="/editar_cliente/{{ c[0] }}">Editar</a> |
-    <a href="/eliminar_cliente/{{ c[0] }}">Eliminar</a>
+<a href="/editar_cliente/{{ c[0] }}" class="btn btn-warning btn-sm">Editar</a>
+<a href="/eliminar_cliente/{{ c[0] }}" class="btn btn-danger btn-sm">Eliminar</a>
 </td>
 </tr>
 {% endfor %}
 
 </table>
+
+</div>
 
 {% endblock %}
