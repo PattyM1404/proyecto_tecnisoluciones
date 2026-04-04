@@ -20,7 +20,7 @@ login_manager.login_view = "login"
 @login_manager.user_loader
 def load_user(user_id):
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("SELECT * FROM usuarios WHERE id_usuario=%s", (user_id,))
     user = cursor.fetchone()
@@ -49,7 +49,7 @@ def login():
         password = request.form['password']
 
         conexion = conectar()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(buffered=True)
 
         cursor.execute("SELECT * FROM usuarios WHERE mail=%s", (email,))
         user = cursor.fetchone()
@@ -77,7 +77,7 @@ def registro():
         password = generate_password_hash(request.form['password'])
 
         conexion = conectar()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(buffered=True)
 
         cursor.execute(
             "INSERT INTO usuarios (nombre, mail, password) VALUES (%s,%s,%s)",
@@ -116,7 +116,7 @@ def logout():
 @login_required
 def usuarios():
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("SELECT * FROM usuarios")
     datos = cursor.fetchall()
@@ -134,7 +134,7 @@ def agregar_usuario():
     password = generate_password_hash(request.form['password'])
 
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute(
         "INSERT INTO usuarios (nombre, mail, password) VALUES (%s,%s,%s)",
@@ -151,7 +151,7 @@ def agregar_usuario():
 @login_required
 def eliminar_usuario(id):
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("DELETE FROM usuarios WHERE id_usuario=%s", (id,))
     conexion.commit()
@@ -167,8 +167,18 @@ def eliminar_usuario(id):
 @app.route('/servicios')
 @login_required
 def servicios():
+    conexion = conectar()
+    cursor = conexion.cursor(buffered=True)
+
+    cursor.execute("SELECT * FROM clientes")
+    clientes = cursor.fetchall()
+
     datos = obtener_servicios()
-    return render_template('servicios.html', servicios=datos)
+
+    cursor.close()
+    conexion.close()
+
+    return render_template('servicios.html', servicios=datos, clientes=clientes)
 
 @app.route('/agregar_servicio', methods=['POST'])
 @login_required
@@ -177,8 +187,9 @@ def agregar_servicio():
     descripcion = request.form['descripcion']
     precio = request.form['precio']
     duracion = request.form['duracion']
+    id_cliente = request.form['id_cliente']
 
-    insertar_servicio(nombre, descripcion, precio, duracion)
+    insertar_servicio(nombre, descripcion, precio, duracion, id_cliente)
 
     return redirect('/servicios')
 
@@ -192,7 +203,16 @@ def eliminar_servicio_route(id):
 @login_required
 def editar_servicio(id):
     servicio = obtener_servicio_por_id(id)
-    return render_template('editar_servicio.html', servicio=servicio)
+
+    conexion = conectar()
+    cursor = conexion.cursor(buffered=True)
+    cursor.execute("SELECT * FROM clientes")
+    clientes = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return render_template('editar_servicio.html', servicio=servicio, clientes=clientes)
 
 @app.route('/actualizar_servicio/<int:id>', methods=['POST'])
 @login_required
@@ -201,8 +221,9 @@ def actualizar_servicio_route(id):
     descripcion = request.form['descripcion']
     precio = request.form['precio']
     duracion = request.form['duracion']
+    id_cliente = request.form['id_cliente']
 
-    actualizar_servicio(id, nombre, descripcion, precio, duracion)
+    actualizar_servicio(id, nombre, descripcion, precio, duracion, id_cliente)
 
     return redirect('/servicios')
 
@@ -215,7 +236,7 @@ def clientes():
     buscar = request.args.get('buscar')
 
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     if buscar:
         cursor.execute("SELECT * FROM clientes WHERE nombre LIKE %s", ('%' + buscar + '%',))
@@ -237,7 +258,7 @@ def agregar_cliente():
     telefono = request.form['telefono']
 
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute(
         "INSERT INTO clientes (nombre, email, telefono) VALUES (%s,%s,%s)",
@@ -254,7 +275,7 @@ def agregar_cliente():
 @login_required
 def eliminar_cliente(id):
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("DELETE FROM clientes WHERE id=%s", (id,))
     conexion.commit()
@@ -268,7 +289,7 @@ def eliminar_cliente(id):
 @login_required
 def editar_cliente(id):
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("SELECT * FROM clientes WHERE id=%s", (id,))
     cliente = cursor.fetchone()
@@ -286,7 +307,7 @@ def actualizar_cliente(id):
     telefono = request.form['telefono']
 
     conexion = conectar()
-    cursor = conexion.cursor()
+    cursor = conexion.cursor(buffered=True)
 
     cursor.execute("""
         UPDATE clientes 
